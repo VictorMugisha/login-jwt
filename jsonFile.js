@@ -1,10 +1,14 @@
 const { sign, verify } = require("jsonwebtoken");
 
-const createToken = (payload) => {
-    return sign(payload, "secret", { expiresIn: "1d" });
+const generateToken = (payload) => {
+    const secretKey = "someSecretString";
+    const options = { expiresIn: "1d" };
+    const token = sign(payload, secretKey, options);
+    
+    return token;
 };
 
 
 module.exports = {
-    createToken,
+    createToken: generateToken,
 }
