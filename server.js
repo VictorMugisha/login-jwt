@@ -1,53 +1,77 @@
 const express = require("express");
 const app = express();
 const { createToken } = require("./jsonFile");
-const { verify } = require("jsonwebtoken");
+const cors = require("cors");
 require("dotenv").config();
+const validateToken = require("./utils/validateToken.js");
 
-const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const UserModel = require("./model/userModel.js");
+const mongoose = require("mongoose");
+
+const bcrypt = require("bcrypt");
+
 const PORT = 3000;
 
 app.use(express.json());
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  })
+);
 
-// JWT token validation middleware
-const validateToken = (req, res, next) => {
-  const authHeader = req.headers.authentication;
-  if (!authHeader) {
-    res.status(401).json({
-      success: false,
-      message: "Token is not provided",
-    });
-  } else {
-    const token = authHeader.split(" ")[1]; // Bearer <token>
+const MONGODB_CONNECTION =
+  "mongodb+srv://victormugisha:victormugisha123@nodenetninja.hd6g2.mongodb.net/login-jwt?retryWrites=true&w=majority&appName=NodeNetNinja";
 
-    verify(token, JWT_SECRET_KEY, (err, decoded) => {
-      if (err) {
-        return res.status(403).json({
-          success: false,
-          message: "Invalid token",
-        });
-      } else {
-        req.user = decoded;
-        next();
-      }
-    });
-  }
-};
+// connect the database
+mongoose
+  .connect(MONGODB_CONNECTION)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log(err));
 
 // Mock a login route
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  if (username === user.username && password === user.password) {
-    const token = createToken(user);
-    res.json({
-      success: true,
-      message: "Authentication successful!",
-      token: token,
-    });
-  } else {
-    res
+  if (!username || !password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing username or password" });
+  }
+
+  const user = UserModel.findOne({ username });
+  res.json(user);
+
+  if (!user) {
+    return res
       .status(401)
-      .json({ success: false, message: "Invalid username or password" });
+      .json({ success: false, message: "Invalid username" });
+  }
+});
+
+// Mock a register route
+app.post("/register", async (req, res) => {
+  const { firstName, lastName, username, password } = req.body;
+  if (!username || !password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing username or password" });
+  }
+
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const newUser = new UserModel({
+    firstName,
+    lastName,
+    username,
+    password: hashedPassword,
+  });
+
+  try {
+    await newUser.save();
+    res
+      .status(201)
+      .json({ success: true, message: "User created successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to create user" });
   }
 });
 
