@@ -9,14 +9,6 @@ const PORT = 3000;
 
 app.use(express.json());
 
-const user = {
-  userId: 1,
-  firstName: "Victor",
-  lastName: "Mugisha",
-  username: "VictorMugisha",
-  password: "password",
-};
-
 // JWT token validation middleware
 const validateToken = (req, res, next) => {
   const authHeader = req.headers.authentication;
