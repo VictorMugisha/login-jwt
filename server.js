@@ -30,7 +30,7 @@ mongoose
   .catch((err) => console.log(err));
 
 // Mock a login route
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res
@@ -38,13 +38,28 @@ app.post("/login", (req, res) => {
       .json({ success: false, message: "Missing username or password" });
   }
 
-  const user = UserModel.findOne({ username });
-  res.json(user);
+  try {
+    const user = await UserModel.findOne({ username });
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid username" });
+    }
 
-  if (!user) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Invalid username" });
+    const passwordCheck = bcrypt.compareSync(password, user.password);
+    if (!passwordCheck) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid password" });
+    }
+
+    const token = createToken(user);
+    res
+      .status(200)
+      .json({ success: true, message: "Login successful", token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
