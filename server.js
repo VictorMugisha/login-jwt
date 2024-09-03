@@ -55,6 +55,11 @@ app.post("/login", (req, res) => {
   }
 });
 
+// The protected route
+app.get("/protected", validateToken, (req, res) => {
+  res.json({ success: true, message: 'Protected route!', user: req.user });
+})
+
 // now the endpoint for login is http://localhost:3000/login
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
